@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoSurrender - Card Game Test UI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .stats-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: linear-gradient(45deg, #333, #555);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card-content {
+            padding: 20px;
+        }
+
+        .card-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .card-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #ffd93d);
+            transition: width 0.3s ease;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-single {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+
+        .btn-single:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-bulk {
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+            color: white;
+            user-select: none;
+        }
+
+        .btn-bulk:active {
+            background: linear-gradient(45deg, #ff9a9e, #fecfef);
+        }
+
+        .press-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.3);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .press-timer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: bold;
+            z-index: 2;
+        }
+
+        .disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .level-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ffd700;
+            color: #333;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 0.8em;
+        }
+
+        .max-level {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .btn-levelup {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #333;
+            font-weight: bold;
+        }
+
+        .btn-levelup:hover {
+            transform: scale(1.05);
+            background: linear-gradient(45deg, #ffed4e, #fff59d);
+        }
+
+        .energy-warning {
+            background: rgba(255, 152, 0, 0.2);
+            color: #ffa726;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 NoSurrender - Card Game Test UI</h1>
+            <p>Test your card development API with single clicks and long press (1-10 seconds)</p>
+        </div>
+
+        <div class="stats-panel">
+            <div class="stat-item">
+                <div class="stat-value" id="energyValue">75</div>
+                <div>Energy</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalCards">6</div>
+                <div>Total Cards</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="maxLevelCards">2</div>
+                <div>Max Level Cards</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="activeRequests">0</div>
+                <div>Active Requests</div>
+            </div>
+        </div>
+
+        <div id="energyWarning" class="energy-warning" style="display: none;">
+            ⚠️ Low Energy! Please wait for regeneration or energy will limit your progress.
+        </div>
+
+        <div class="cards-grid" id="cardsGrid">
+            <!-- Cards will be loaded here -->
+        </div>
+
+
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api';
+        let cards = [];
+        let currentEnergy = 75;
+        let activeRequests = 0;
+        let pressTimers = {};
+
+        // Weapon images mapping
+        const weaponImages = [
+            'assets/weapons (1).png',
+            'assets/weapons (2).png',
+            'assets/weapons (5).png',
+            'assets/weapons (7).png',
+            'assets/weapons (12).png',
+            'assets/weapons (13).png',
+            'assets/weapons (14).png',
+            'assets/weapons (23).png',
+            'assets/weapons (24).png'
+        ];
+
+        async function loadCards() {
+            try {
+                const response = await fetch(`${API_BASE}/levels/cards`);
+                const data = await response.json();
+                cards = data.cards;
+                updateCardsDisplay();
+                updateStats();
+            } catch (error) {
+                console.error('Error loading cards:', error);
+            }
+        }
+
+        async function loadEnergy() {
+            try {
+                const response = await fetch(`${API_BASE}/energy`);
+                const data = await response.json();
+                currentEnergy = data.energy;
+                updateStats();
+            } catch (error) {
+                console.error('Error loading energy:', error);
+            }
+        }
+
+        function updateCardsDisplay() {
+            const grid = document.getElementById('cardsGrid');
+            grid.innerHTML = cards.map((card, index) => {
+                const canLevelUp = card.progress >= 100 && card.level < 3;
+                const isMaxLevel = card.level >= 3;
+                
+                return `
+                <div class="card">
+                    <div class="card-image">
+                        <img src="${weaponImages[index % weaponImages.length]}" alt="${card.name}" onerror="this.style.display='none'">
+                        <div class="level-badge ${isMaxLevel ? 'max-level' : ''}">${isMaxLevel ? 'MAX' : 'Lv.' + card.level}</div>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">${card.name}</div>
+                        <div class="card-stats">
+                            <span>Level: ${card.level}/3</span>
+                            <span>Progress: ${card.progress}%</span>
+                            <span>${card.rarity}</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${card.progress}%"></div>
+                        </div>
+                        <div class="card-actions">
+                            ${canLevelUp ? `
+                                <button class="btn btn-levelup" onclick="levelUp(${card.id})">
+                                    🎉 LEVEL UP!
+                                </button>
+                            ` : `
+                                <button class="btn btn-single ${isMaxLevel ? 'disabled' : ''}" 
+                                        onclick="singleClick(${card.id})" 
+                                        ${isMaxLevel ? 'disabled' : ''}>
+                                    Single (+2%)
+                                </button>
+                                <button class="btn btn-bulk ${isMaxLevel ? 'disabled' : ''}" 
+                                        onmousedown="startLongPress(${card.id}, this)" 
+                                        onmouseup="endLongPress(${card.id})" 
+                                        onmouseleave="endLongPress(${card.id})"
+                                        ontouchstart="startLongPress(${card.id}, this)" 
+                                        ontouchend="endLongPress(${card.id})"
+                                        ${isMaxLevel ? 'disabled' : ''}>
+                                    <div class="press-indicator" id="indicator-${card.id}"></div>
+                                    <div class="press-timer" id="timer-${card.id}">Hold to Bulk</div>
+                                </button>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+
+        async function singleClick(cardId) {
+            if (activeRequests >= 3) {
+                return;
+            }
+
+            activeRequests++;
+            updateStats();
+
+            try {
+                const response = await fetch(`${API_BASE}/progress`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cardId: cardId.toString() })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentEnergy = data.energy;
+                    updateCardProgress(cardId, data.progress);
+                } else {
+                    console.error('Single click failed:', data.error);
+                }
+            } catch (error) {
+                console.error('Single click error:', error);
+            } finally {
+                activeRequests--;
+                updateStats();
+            }
+        }
+
+        async function levelUp(cardId) {
+            if (activeRequests >= 3) {
+                return;
+            }
+
+            activeRequests++;
+            updateStats();
+
+            try {
+                const response = await fetch(`${API_BASE}/level-up`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cardId: cardId.toString() })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    updateCardProgress(cardId, data.progress, data.level);
+                } else {
+                    console.error('Level up failed:', data.error);
+                }
+            } catch (error) {
+                console.error('Level up error:', error);
+            } finally {
+                activeRequests--;
+                updateStats();
+            }
+        }
+
+        function startLongPress(cardId, button) {
+            if (button.disabled || activeRequests >= 3) return;
+
+            const indicator = document.getElementById(`indicator-${cardId}`);
+            const timer = document.getElementById(`timer-${cardId}`);
+            
+            let startTime = Date.now();
+            let duration = 0;
+
+            pressTimers[cardId] = setInterval(() => {
+                duration = (Date.now() - startTime) / 1000;
+                
+                if (duration >= 10) {
+                    endLongPress(cardId);
+                    return;
+                }
+
+                const percentage = (duration / 10) * 100;
+                indicator.style.width = `${percentage}%`;
+                timer.textContent = `${duration.toFixed(1)}s`;
+            }, 100);
+        }
+
+        async function endLongPress(cardId) {
+            if (!pressTimers[cardId]) return;
+
+            clearInterval(pressTimers[cardId]);
+            delete pressTimers[cardId];
+
+            const indicator = document.getElementById(`indicator-${cardId}`);
+            const timer = document.getElementById(`timer-${cardId}`);
+            
+            const duration = parseFloat(timer.textContent);
+            
+            // Reset UI
+            indicator.style.width = '0%';
+            timer.textContent = 'Hold to Bulk';
+
+            if (duration < 1) {
+                return;
+            }
+
+            // Scale 1-10 seconds to 1-50 amount
+            const amount = Math.max(1, Math.min(50, Math.round(duration * 5)));
+            
+            if (activeRequests >= 3) {
+                return;
+            }
+
+            activeRequests++;
+            updateStats();
+
+            try {
+                const response = await fetch(`${API_BASE}/progress/bulk`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cardId, amount, userId: 1 })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentEnergy = data.energy;
+                    updateCardProgress(cardId, data.progress, data.level);
+                } else {
+                    console.error('Bulk action failed:', data.error);
+                }
+            } catch (error) {
+                console.error('Bulk action error:', error);
+            } finally {
+                activeRequests--;
+                updateStats();
+            }
+        }
+
+        function updateCardProgress(cardId, progress, level = null) {
+            const card = cards.find(c => c.id === cardId);
+            if (card) {
+                card.progress = progress;
+                if (level !== null) card.level = level;
+                updateCardsDisplay();
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('energyValue').textContent = currentEnergy;
+            document.getElementById('totalCards').textContent = cards.length;
+            document.getElementById('maxLevelCards').textContent = cards.filter(c => c.level >= 3).length;
+            document.getElementById('activeRequests').textContent = activeRequests;
+
+            const warning = document.getElementById('energyWarning');
+            warning.style.display = currentEnergy < 10 ? 'block' : 'none';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCards();
+            loadEnergy();
+            
+            // Auto-refresh energy every 30 seconds
+            setInterval(loadEnergy, 30000);
+        });
+
+        // Prevent context menu on long press
+        document.addEventListener('contextmenu', e => e.preventDefault());
+    </script>
+</body>
+</html> 
