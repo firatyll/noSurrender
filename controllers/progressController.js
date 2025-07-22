@@ -17,6 +17,10 @@ exports.bulkUpdateProgress = async (req, res) => {
       return res.status(404).json({ error: 'Card or energy not found' });
     }
 
+    if (card.level >= 3) {
+      return res.status(400).json({ error: 'Card has reached maximum level (3)' });
+    }
+
     const maxSteps = Math.min(
       amount,
       Math.floor(energy.amount),
@@ -30,12 +34,16 @@ exports.bulkUpdateProgress = async (req, res) => {
     const newProgress = card.progress + maxSteps * 2;
     const newEnergy = energy.amount - maxSteps;
 
+    const shouldLevelUp = newProgress >= 100 && card.level < 3;
+    const finalLevel = shouldLevelUp ? card.level + 1 : card.level;
+    const finalProgress = shouldLevelUp ? 0 : (newProgress >= 100 ? 100 : newProgress);
+
     await db.$transaction([
       db.card.update({
         where: { id: parseInt(cardId) },
         data: {
-          progress: newProgress >= 100 ? 0 : newProgress,
-          level: newProgress >= 100 ? card.level + 1 : card.level
+          progress: finalProgress,
+          level: finalLevel
         }
       }),
       db.energy.update({
@@ -45,10 +53,11 @@ exports.bulkUpdateProgress = async (req, res) => {
     ]);
 
     return res.json({
-      progress: newProgress >= 100 ? 0 : newProgress,
-      level: newProgress >= 100 ? card.level + 1 : card.level,
+      progress: finalProgress,
+      level: finalLevel,
       energy: newEnergy,
-      stepsProcessed: maxSteps
+      stepsProcessed: maxSteps,
+      maxLevelReached: finalLevel >= 3
     });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
@@ -72,6 +81,10 @@ exports.updateProgress = async (req, res) => {
       return res.status(404).json({ error: 'Card or energy not found' });
     }
 
+    if (card.level >= 3) {
+      return res.status(400).json({ error: 'Card has reached maximum level (3)' });
+    }
+
     if (energy.amount < 1) {
       return res.status(400).json({ error: 'Not enough energy' });
     }
@@ -81,7 +94,7 @@ exports.updateProgress = async (req, res) => {
     }
 
     const newProgress = card.progress + 2;
-    const newEnergy = energy.amount - 1; 
+    const newEnergy = energy.amount - 1;
 
     await db.$transaction([
       db.card.update({

@@ -2,7 +2,6 @@ const db = require('../lib/db');
 
 exports.getEnergyLevels = async (req, res) => {
   try {
-    // Default userId (mock authentication için)
     const userId = req.query.userId ? parseInt(req.query.userId) : 1;
 
     const energy = await db.energy.findFirst({ where: { userId } });
